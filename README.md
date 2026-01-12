@@ -1,316 +1,254 @@
-# B站动态置顶评论监控系统(BTCE)
+# B站动态置顶评论与直播监控系统(BTCE)
 
 ![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
 ![Dependencies](https://img.shields.io/badge/dependencies-playwright%20%7C%20beautifulsoup4-orange)
 ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macOS-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Python](https://img.shields.io/badge/Python-Learning-blue?logo=python)
 
-
-> **项目名称说明**：BTCE 是 **B**ilibili **T**op **C**omment forward **E**mail 的缩写，意为"B站置顶评论邮件转发"
-一个自动监控B站动态置顶评论变化的Python程序，当检测到置顶评论更新时自动发送邮件通知。
-
-## 项目完全非原创且主要依赖AI辅助开发！！！
+> **项目名称说明**：BTCE 是 **B**ilibili **T**op **C**omment forward **E**mail 的缩写，意为"B站置顶评论与直播邮件/QQ通知转发"
+> 一个自动监控 B站动态置顶评论及直播状态变化的 Python 程序，当检测到更新时可自动发送邮件与 QQ 推送。
 
 ## 功能特点
 
-- 🔍 实时监控B站动态置顶评论变化
-- 📧 自动发送邮件通知
-- 🐧 可将文本与图片消息推送到qq
-- 🖼️ 支持评论图片监控
-
-  
+* 🔍 实时监控 B站动态置顶评论文字和图片
+* 📧 自动发送邮件通知（支持完整 HTML+CSS 卡片显示）
+* 🐧 可将文本与图片消息推送到 QQ 群（支持 CQ 码发送封面/评论图片）
+* 🖼️ 支持监控评论图片和直播封面
+* 🎬 直播状态监控（开播/下播/标题变更通知）
 
 ## 安装要求
 
-- Python 3.8+
-- 支持的操作系统：Windows/Linux/macOS
+* Python 3.8+
+* 支持的操作系统：Windows / Linux / macOS
 
 ## 快速开始
 
 ### 1. 克隆项目
+
 ```bash
 git clone https://github.com/X-tong2568/BTCE2.0
 cd BTCE2.0
 ```
+
 ### 2. 安装依赖
+
 ```bash
 pip install -r requirements.txt
 ```
-### 3. 安装Playwright浏览器
+
+### 3. 安装 Playwright 浏览器
+
 ```bash
 playwright install chromium
 ```
-### 4. 配置邮箱和QQ（重要！）
 
-编辑 `config_email.py` 文件：
-```
-python
+### 4. 配置邮箱和 QQ
 
-发件邮箱配置
-EMAIL_USER = "your_email@qq.com" # 您的QQ邮箱
-EMAIL_PASSWORD = "your_smtp_password" # QQ邮箱SMTP授权码
-接收邮箱
-TO_EMAILS = [
-"receiver@qq.com", # 接收通知的邮箱
-]
+#### 邮箱配置（`config_email.py`）：
+
+```python
+EMAIL_USER = "your_email@qq.com"       # 发件邮箱
+EMAIL_PASSWORD = "your_smtp_password"  # SMTP授权码
+TO_EMAILS = ["receiver@qq.com"]        # 接收通知的邮箱列表
 ```
-**获取QQ邮箱SMTP授权码：**
-1. 登录QQ邮箱 → 设置 → 账户
-2. 开启"POP3/SMTP服务"
+
+**QQ 邮箱 SMTP 授权码获取方法**：
+
+1. 登录 QQ 邮箱 → 设置 → 账户
+2. 开启 "POP3/SMTP 服务"
 3. 生成授权码
 
-**其他邮箱请参阅`config_email.py` 文件**
+#### QQ 配置（`config_qq.py`）：
 
-QQ配置：
+1. 设置 QQ_BOT_API_URL（机器人服务地址）
+2. 设置 QQ_GROUP_IDS（推送的QQ群号，字符串形式）
+3. 配置访问令牌（如需要）
 
-1. 修改 QQ_BOT_API_URL
-   - 根据您的QQ机器人实际部署地址修改
-   
+> 保存文件后重启程序使配置生效
 
-2. 设置QQ群号
-   - 在 QQ_GROUP_IDS 列表中添加要推送的QQ群号
-   - 每个群号用字符串形式表示
+### 5. 配置监控目标（动态/直播）
 
-3. 配置访问令牌（如果需要）
-   - 如果您的QQ机器人设置了访问令牌，请填写QQ_BOT_ACCESS_TOKEN
+#### 动态监控（`dynamic.py`）：
 
-4. 保存文件后重启监控程序使配置生效
-
-重要提示：
-1. 请确保QQ机器人服务正常运行
-2. 确保监控程序可以访问QQ机器人API地址
-
-
-### 5. 配置监控目标
-
-编辑 `dynamic.py` 文件，添加要监控的动态链接：
-```
-python
-
+```python
 DYNAMIC_URLS = [
-"https://t.bilibili.com/动态ID1",
-"https://t.bilibili.com/动态ID2",
+    "https://t.bilibili.com/动态ID1",
+    "https://t.bilibili.com/动态ID2",
 ]
 ```
-**如何获取动态ID：**
-- 打开B站动态页面
-- 复制地址栏中的动态ID，如：`https://t.bilibili.com/1128150856256978944`
 
-### 6. 获取B站登录Cookie
+**获取动态ID**：打开动态页面，复制地址栏数字部分
 
-运行获取Cookie脚本：
+#### 直播监控：
+
+* 直播封面会显示在邮件和 QQ 消息中
+* 仅在开播、下播、标题更新三种情况下发送通知
+
+### 6. 获取 B站登录 Cookie
+
 ```bash
 python get_cookies.py
 ```
-按提示扫码登录B站，登录成功后会自动保存cookies。  
-**隐私安全说明**：
-- Cookie文件仅保存在您的本地电脑，不会被传输到任何服务器
-- 项目作者无法获取您的登录信息
-- Cookie包含您的B站身份凭证，请妥善保管，不要分享给他人
-- 如需彻底删除登录信息，直接删除项目目录下的`cookies.json`文件即可
+
+扫码登录，成功后自动生成 `cookies.json`。
+
+**隐私说明**：
+
+* Cookie 文件仅保存在本地，不会上传
+* 请妥善保管，删除时直接删除 `cookies.json`
 
 ### 7. 运行监控程序
+
 ```bash
 python main.py
 ```
+
 ## 文件结构
+
 ```text
 bili-dynamic-monitor/
-├── main.py # 主程序入口
-├── config.py # 主配置文件
-├── config_email.py # 邮箱配置文件
-├── config_qq.py # QQ配置文件
-├── dynamic.py # 监控动态列表
-├── get_cookies.py # 获取Cookie脚本
-├── cookies.json # 登录Cookie（自动生成）
-├── requirements.txt # 依赖包列表
-├── README.md # 说明文档
-├── monitor.py # 监控主逻辑
-├── render_comment.py # 评论渲染和检测
-├── email_utils.py # 邮件发送工具
-├── qq_utils.py # QQ发送工具
-├── health_check.py # 健康检查
-├── logger_config.py # 日志配置
+├── main.py                # 主程序入口
+├── config.py              # 主配置文件
+├── config_email.py        # 邮箱配置
+├── config_qq.py           # QQ配置
+├── dynamic.py             # 监控动态列表
+├── get_cookies.py         # 获取Cookie脚本
+├── cookies.json           # 登录Cookie（自动生成）
+├── requirements.txt       # 依赖包列表
+├── README.md              # 说明文档
+├── live_monitor.py        # 直播监控逻辑
+├── comment_renderer.py    # 评论渲染和检测
+├── email_utils.py         # 邮件发送工具
+├── qq_utils.py            # QQ消息发送工具
+├── health_check.py        # 健康检查
+├── logger_config.py       # 日志配置
 ├── performance_monitor.py # 性能监控
-├── status_monitor.py #状态监控
-├── retry_decorator.py # 重试装饰器
-├── logs/ # 日志目录（自动生成）
-│   ├── monitor.log
-│   ├── error.log
-│   └── performance.log
-├── sent_emails/ # 邮件备份（自动生成）
+├── status_monitor.py      # 状态监控
+├── retry_decorator.py     # 重试装饰器
+├── live_monitor.py        # 直播状态监控
+├── self_monitor.py        # 直播状态脚本监控
+├── logs/                  # 日志目录（自动生成）
+├── sent_emails/           # 邮件备份（自动生成）
 └── bili_pinned_comment.json # 历史记录（自动生成）
 ```
+
 ## 配置说明
 
-### 主要配置项（config.py）
+### 主要配置项（`config.py`）
+
+```python
+UP_NAME = "UP主名字"
+CHECK_INTERVAL = 8.5  # 秒
+
+BROWSER_RESTART_INTERVAL = 10
+HEALTH_CHECK_INTERVAL = 15
+TASK_TIMEOUT = 30
+
+STATUS_MONITOR_INTERVAL = 7200
+NO_UPDATE_ALERT_HOURS = 26
+
+MEMORY_THRESHOLD_MB = 500
+MAX_LOG_SIZE_MB = 5
+LOG_BACKUP_COUNT = 1
+
+PERFORMANCE_REPORT_CYCLE_INTERVAL = 8000
+
+P1_TOTAL_FAILURE_THRESHOLD = 100
+P2_SUCCESS_RATE_THRESHOLD = 0.8
 ```
-python
 
-UP_NAME = "user name" # UP主名字（仅用于邮件标题）
-CHECK_INTERVAL = 8.5 # 检查间隔（秒）
+### 邮箱配置（`config_email.py`）
 
-# ===== 监控配置 =====
-BROWSER_RESTART_INTERVAL = 10  # 每10次循环重启浏览器
-HEALTH_CHECK_INTERVAL = 15  # 每15次循环进行健康检查
-TASK_TIMEOUT = 30  # 单个任务超时时间(秒)
+* 支持 QQ、163、Gmail 等邮箱
+* QQ 邮箱 SMTP: smtp.qq.com:465
+* Gmail SMTP: smtp.gmail.com:587
 
-# 状态监控配置
-STATUS_MONITOR_INTERVAL = 7200  # 状态检查间隔（秒），1小时
-NO_UPDATE_ALERT_HOURS = 26      # 无更新提醒阈值（小时）
+### 动态监控配置（`dynamic.py`）
 
-# ===== 性能监控配置 =====
-MEMORY_THRESHOLD_MB = 500  # 内存阈值(MB)
-MAX_LOG_SIZE_MB = 5  # 单个日志文件最大大小(MB)
-LOG_BACKUP_COUNT = 1  # 保留的日志备份数量
-
-# ===== 性能报告配置（基于轮次）=====
-PERFORMANCE_REPORT_CYCLE_INTERVAL = 8000  # 8000轮发送一次报告
-
-# ===== 告警阈值配置 =====
-# P1 告警：累计抓取失败总次数达到此值时触发（非连续失败）
-P1_TOTAL_FAILURE_THRESHOLD = 100  # 失败次数阈值（P1告警）
-# P2 告警：在最近 P2_WINDOW_CYCLES 轮中，成功率低于此阈值时触发
-P2_SUCCESS_RATE_THRESHOLD = 0.8  # 成功率阈值（80%）
-```
-### 邮箱配置（config_email.py）
-
-支持主流邮箱服务商：
-- QQ邮箱：smtp.qq.com:465
-- 163邮箱：smtp.163.com:465
-- Gmail：smtp.gmail.com:587
-
-### 动态监控配置（dynamic.py）
-
-添加要监控的动态链接到 `DYNAMIC_URLS` 列表。
+* 将要监控的动态链接添加到 `DYNAMIC_URLS` 列表
 
 ## 使用说明
 
 ### 启动监控
+
 ```bash
 python main.py
 ```
+
 ### 停止监控
+
 按 `Ctrl + C` 优雅停止程序
 
 ### 查看日志
-程序运行日志保存在 `logs/` 目录：
-- `monitor.log` - 运行日志
-- `error.log` - 错误日志
-- `performance.log` - 性能日志
+
+```text
+logs/
+├── monitor.log       # 运行日志
+├── error.log         # 错误日志
+└── performance.log   # 性能日志
+```
 
 ## 常见问题
 
-### 1. 无法获取Cookie
-- 确保已安装Chromium浏览器：`playwright install chromium`
-- 检查网络连接，确保可以访问B站
+1. **无法获取 Cookie**
 
-### 2. 提示邮件发送失败但实际收到邮件
-**这是一个已知问题**：有时程序会报告"邮件发送失败"，但您实际上能收到邮件，或者您会收到多封邮件。
+   * 确保 Chromium 已安装：`playwright install chromium`
+   * 检查网络连接
 
-**原因**：SMTP服务器在处理邮件时可能出现异步响应，程序在等待确认时超时，但邮件实际上已经进入发送队列。
+2. **邮件发送失败但实际收到**
 
-**解决方法**：
-- 如果能看到邮件正常接收，可以忽略这个错误提示
-- 可以适当增加`email_utils.py`中的超时时间
-- 检查`sent_emails/`目录中是否有邮件备份，如果有备份说明邮件内容已生成
+   * SMTP 异步响应可能导致程序超时
+   * 可增加 `email_utils.py` 中超时时间
+   * 邮件备份存在则说明已生成邮件
 
-### 3. 邮件完全发送失败
-- 检查邮箱配置是否正确
-- 确认SMTP授权码已正确设置
-- 检查防火墙设置
-- 确认发件邮箱已开启SMTP服务
+3. **邮件完全发送失败**
 
-### 4. 监控不到变化
-- 确认动态链接格式正确
-- 检查Cookie是否过期（需重新获取）
-- 查看日志文件排查问题
+   * 检查邮箱配置和授权码
+   * 检查防火墙
 
-### 5. 内存占用过高
-程序会自动重启浏览器释放内存，可在config.py中调整：
-```
-python
+4. **监控不到变化**
 
-MEMORY_THRESHOLD_MB = 500 # 内存阈值
-BROWSER_RESTART_INTERVAL = 10 # 重启间隔
-```
+   * 动态链接格式正确
+   * Cookie 是否过期
+
+5. **内存占用过高**
+
+   * 程序会自动重启浏览器释放内存
+   * 可调整 `MEMORY_THRESHOLD_MB` 和 `BROWSER_RESTART_INTERVAL`
+
 ## 注意事项
 
-1. **隐私安全**：不要泄露 `cookies.json` 和 `config_email.py` 文件
-2. **遵守规则**：合理设置检查间隔，避免对B站服务器造成压力
-3. **定期维护**：Cookie会过期，需要定期重新获取
-4. **合法使用**：请遵守B站用户协议和相关法律法规
+1. 隐私安全：不要泄露 `cookies.json` 和邮箱授权码
+2. 合理设置检查间隔，避免对 B站服务器造成压力
+3. 定期更新 Cookie
+4. 遵守 B站用户协议及相关法律法规
 
 ## 更新日志
 
-### v2.0.0
+### v3.0.0
 
-- 支持置顶评论文字和图片监控
-- 支持邮件通知
-- 完善的错误处理和日志系统
-- 支持邮件通知检查是否需要更行动态地址
+* 支持直播状态监控（开播/下播/标题更新）
+* 邮件显示完整 HTML+CSS 卡片，包含直播封面
+* QQ 消息支持封面图片 CQ 码
+* 保留动态置顶评论监控及邮件/QQ推送功能
+* 封面变化不作为通知条件
 
 ## 技术支持
 
-### 项目开发说明
-本项目是在AI助手（包括ChatGPT、腾讯元宝等）的协助下完成的。项目代码和功能实现得到了AI技术的大力支持。
-
-### 技术支持政策
-由于项目完全非原创且主要依赖AI辅助开发，技术支持将按以下优先级提供：
-
-1. **优先建议**：遇到问题时，请先询问AI助手（如ChatGPT、腾讯元宝等）
-2. **查阅文档**：仔细阅读本README和代码中的注释
-3. **社区互助**：在相关技术社区寻求帮助
-4. **有限支持**：开发者仅提供有限的技术支持
-
-### 推荐的问题解决路径：
-1. 将错误信息复制到AI助手中询问解决方案
-2. 检查配置文件是否正确设置
-3. 查看logs目录下的日志文件排查问题
-4. 在GitHub Issues中查看是否有类似问题
-
-### 注意事项
-- 本项目适合有一定Python基础的用户使用
-- 复杂的定制化需求建议自行修改或寻求AI助手帮助
-- 不保证在所有环境下都能完美运行
+* 项目主要依赖 AI 辅助开发（ChatGPT、腾讯元宝等）
+* 技术支持优先参考 AI 助手或文档
 
 ## 许可证
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+MIT 许可证 - 查看 [LICENSE](LICENSE)
 
 ## 免责声明
 
-本项目仅供学习和研究使用，请遵守相关法律法规和B站用户协议。使用者应对自己的行为负责，作者不承担任何法律责任。
+仅供学习与研究使用，使用者自行负责。
+请合理设置检查频率，妥善保管 Cookie 与邮箱授权码。
 
-**重要提醒**：
-- 请合理设置检查频率，避免对B站服务器造成过大压力
-- 请妥善保管个人Cookie和邮箱授权码，不要泄露给他人
-- 本项目完全非原创且主要依赖AI辅助开发，技术支持和维护有限
+---
 
+我可以帮你做的下一步优化是**把 README 中的“动态监控”和“直播监控”部分加图示或者示例邮件卡片效果**，让用户一眼就能看懂卡片长什么样。
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+你希望我帮你加吗？
