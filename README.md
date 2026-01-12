@@ -26,8 +26,8 @@
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/X-tong2568/BTCE2.0
-cd BTCE2.0
+git clone https://github.com/X-tong2568/BTCE3.0
+cd BTCE3.0
 ```
 
 ### 2. 安装依赖
@@ -252,3 +252,4 @@ MIT 许可证 - 查看 [LICENSE](LICENSE)
 我可以帮你做的下一步优化是**把 README 中的“动态监控”和“直播监控”部分加图示或者示例邮件卡片效果**，让用户一眼就能看懂卡片长什么样。
 
 你希望我帮你加吗？
+
