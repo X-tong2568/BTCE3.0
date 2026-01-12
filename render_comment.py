@@ -1,8 +1,10 @@
+# comment_renderer.py
 import time
 import asyncio
 from bs4 import BeautifulSoup
 from config import UP_NAME
 from logger_config import logger
+from datetime import datetime
 
 
 class CommentRenderer:
@@ -75,7 +77,7 @@ class CommentRenderer:
                         )
                         comment_images.extend(img_src_list)
                     except Exception as e:
-                        logger.error(f"❌ 通过shadow DOM获取图片失败: {e}")
+                        logger.error(f"❌❌ 通过shadow DOM获取图片失败: {e}")
 
                         # 备用方法：尝试直接获取图片元素
                         try:
@@ -90,7 +92,7 @@ class CommentRenderer:
                                     if src not in comment_images:
                                         comment_images.append(src)
                         except Exception as e2:
-                            logger.error(f"❌ 直接获取图片元素失败: {e2}")
+                            logger.error(f"❌❌ 直接获取图片元素失败: {e2}")
 
                 break
 
@@ -109,126 +111,180 @@ class CommentRenderer:
 
             # 检测文字变化
             if last_text and current_text != last_text:
-                logger.info("🔔 检测到置顶评论文字变化！")
+                logger.info("🔔🔔 检测到置顶评论文字变化！")
                 return True
 
             # 检测图片变化
             if set(current_images) != set(last_images):
-                logger.info("🔔 检测到置顶评论图片变化！")
+                logger.info("🔔🔔 检测到置顶评论图片变化！")
                 return True
 
             return False
 
         except Exception as e:
-            logger.error(f"❌ 检测评论变化失败: {e}")
+            logger.error(f"❌❌ 检测评论变化失败: {e}")
             return False
 
     def render_email_content(self, dynamic_id, current_html, current_images, last_html, last_images, current_time=None):
-        """渲染邮件内容"""
+        """渲染邮件内容 - 修复图片显示问题"""
         try:
             if current_time is None:
                 current_time = time.strftime('%Y-%m-%d %H:%M:%S')
 
-            # 邮件主体（新置顶评论部分）
+            primary_color = "#2196F3"
+            secondary_color = "#1976D2"
+            status_color = "#2196F3"
+
             email_body = f"""
+            <!DOCTYPE html>
             <html>
-              <head>
+            <head>
                 <meta charset="UTF-8">
+                <title>{UP_NAME} 动态置顶评论更新通知</title>
                 <style>
-                  body {{
-                    font-family: Arial, sans-serif;
-                    margin: 20px;
-                    line-height: 1.6;
-                  }}
-                  .comment-section {{
-                    margin-bottom: 30px;
-                  }}
-                  .comment-title {{
-                    font-weight: bold;
-                    margin-bottom: 10px;
-                    color: #333;
-                  }}
-                  .comment-content {{
-                    border: 1px solid #ddd;
-                    padding: 15px;
-                    border-radius: 5px;
-                    white-space: pre-wrap;
-                    word-break: break-all;
-                  }}
-                  .current-comment {{
-                    background-color: #f0fff0;
-                  }}
-                  .previous-comment {{
-                    background-color: #fff0f0;
-                  }}
-                  .images-container {{
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 10px;
-                    margin-top: 10px;
-                  }}
-                  .image-item {{
-                    max-width: 300px;
-                    max-height: 300px;
-                    object-fit: contain;
-                  }}
+                    body {{
+                        font-family: 'Microsoft YaHei', Arial, sans-serif;
+                        margin: 0;
+                        padding: 20px;
+                        background-color: #f5f5f5;
+                    }}
+                    .container {{
+                        max-width: 600px;
+                        margin: 0 auto;
+                        background-color: white;
+                        border-radius: 10px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                        overflow: hidden;
+                    }}
+                    .header {{
+                        background: linear-gradient(135deg, {primary_color}, {secondary_color});
+                        color: white;
+                        padding: 20px;
+                        text-align: center;
+                    }}
+                    .content {{
+                        padding: 30px;
+                    }}
+                    .info-section {{
+                        background-color: #f9f9f9;
+                        padding: 20px;
+                        border-radius: 8px;
+                        margin-bottom: 20px;
+                    }}
+                    .comment-content {{
+                        border: 1px solid #ddd;
+                        padding: 15px;
+                        border-radius: 5px;
+                        white-space: pre-wrap;
+                        word-break: break-all;
+                        margin-top: 10px;
+                    }}
+                    .current-comment {{
+                        background-color: #f0f8ff;
+                    }}
+                    .previous-comment {{
+                        background-color: #f0f0f0;
+                    }}
+                    .images-container {{
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                        margin-top: 10px;
+                    }}
+                    .image-item {{
+                        max-width: 300px;
+                        max-height: 300px;
+                        object-fit: contain;
+                        border-radius: 5px;
+                        border: 1px solid #ddd;
+                    }}
+                    .footer {{
+                        text-align: center;
+                        color: #999;
+                        font-size: 12px;
+                        margin-top: 20px;
+                        padding: 20px;
+                        border-top: 1px solid #eee;
+                    }}
                 </style>
-              </head>
-              <body>
-                <h2>{UP_NAME} 动态置顶评论更新通知</h2>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>{UP_NAME}动态置顶评论更新通知</h1>
+                    </div>
 
-                <div class="comment-section">
-                  <p class="comment-title">监控的动态：</p>
-                  <p><a href="https://t.bilibili.com/{dynamic_id}">https://t.bilibili.com/{dynamic_id}</a></p>
-                </div>
+                    <div class="content">
 
-                <div class="comment-section">
-                  <p class="comment-title">检测时间：</p>
-                  <p>{current_time}</p>
-                </div>
+                        <div class="info-section">
+                            <p><strong>监测动态：</strong>
+                            <a href="https://t.bilibili.com/{dynamic_id}">
+                            https://t.bilibili.com/{dynamic_id}</a></p>
+                            <p><strong>检测时间：</strong>{current_time}</p>
+                        </div>
 
-                <div class="comment-section">
-                  <p class="comment-title">新置顶评论：</p>
-                  <div class="comment-content current-comment">
-                    {current_html}
-                  </div>
+                        <div class="info-section">
+                            <p><strong>新置顶评论：</strong></p>
+                            <div class="comment-content current-comment">
+                                {current_html if current_html else "无置顶评论"}
+                            </div>
             """
 
-            # 修复：正确插入最新置顶评论图片
+            # ✅ 新置顶评论图片（关键修复点）
             if current_images:
                 email_body += '<div class="images-container">'
                 for img_url in current_images:
-                    email_body += f'<img class="image-item" src="{img_url}" alt="评论图片" style="max-width: 100%; height: auto;">'
+                    if img_url.startswith('//'):
+                        img_url = 'https:' + img_url
+                    elif not img_url.startswith(('http://', 'https://')):
+                        img_url = 'https:' + img_url
+
+                    email_body += f'''
+                    <img class="image-item" src="{img_url}" alt="评论图片">
+                    '''
                 email_body += '</div>'
 
-            # 原置顶评论部分
             email_body += f"""
-                </div>
+                        </div>
 
-                <div class="comment-section">
-                  <p class="comment-title">原置顶评论：</p>
-                  <div class="comment-content previous-comment">
-                    {last_html if last_html else "无原置顶评论"}
-                  </div>
+                        <div class="info-section">
+                            <p><strong>原置顶评论：</strong></p>
+                            <div class="comment-content previous-comment">
+                                {last_html if last_html else "无原置顶评论"}
+                            </div>
             """
 
-            # 修复：正确插入原置顶评论图片
+            # ✅ 原置顶评论图片（同样修复）
             if last_images:
                 email_body += '<div class="images-container">'
                 for img_url in last_images:
-                    email_body += f'<img class="image-item" src="{img_url}" alt="原评论图片" style="max-width: 100%; height: auto;">'
+                    if img_url.startswith('//'):
+                        img_url = 'https:' + img_url
+                    elif not img_url.startswith(('http://', 'https://')):
+                        img_url = 'https:' + img_url
+
+                    email_body += f'''
+                    <img class="image-item" src="{img_url}" alt="原评论图片">
+                    '''
                 email_body += '</div>'
 
-            email_body += """
+            email_body += f"""
+                        </div>
+                    </div>
+
+                    <div class="footer">
+                        <p>此邮件由动态监控系统自动发送，请勿回复</p>
+                        <p>{current_time}</p>
+                    </div>
                 </div>
-              </body>
+            </body>
             </html>
             """
 
             return email_body
 
         except Exception as e:
-            logger.error(f"❌❌ 渲染邮件内容失败: {e}")
+            logger.error(f"❌ 渲染邮件内容失败: {e}")
             return f"<html><body><h1>渲染邮件内容出错: {e}</h1></body></html>"
 
     def generate_qq_message(self, up_name: str, dynamic_id: str, current_html: str, current_time: str,
@@ -252,12 +308,12 @@ class CommentRenderer:
             text_content = soup.get_text(strip=True)
 
             # 生成QQ消息
-            qq_message = f"【{up_name}】瞳瞳空间更新啦~\n"
+            qq_message = f"【{up_name}】动态置顶评论更新啦~\n"
             qq_message += f"{text_content}\n"
 
             # 添加图片（如果有）
             if current_images:
-                qq_message += "📸 相关图片：\n"
+                qq_message += "📸 图片：\n"
                 # 限制最多发送3张图片，避免消息过长
                 for i, img_url in enumerate(current_images[:3]):
                     # 使用CQ码发送图片
@@ -273,7 +329,7 @@ class CommentRenderer:
             return qq_message
 
         except Exception as e:
-            logger.error(f"❌ 生成QQ消息失败: {e}")
+            logger.error(f"❌❌❌❌ 生成QQ消息失败: {e}")
             # 备用消息格式
             backup_msg = f"【{up_name}】置顶评论更新通知\n动态: {dynamic_id}\n时间: {current_time}"
             if current_images:
